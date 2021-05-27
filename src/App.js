@@ -21,7 +21,7 @@ function App() {
   const [session, setSession] = useState(sessionRef.current)
   const [breakSess, setBreakSess] = useState(breakRef.current)
   const [clockState, setClockState] = useState("paused")
-  const [currentSession, setCurrentSession] = useState(session)
+  const [currentSession, setCurrentSession] = useState(session*60)
   
   const currentSessionRef = useRef(session)
 
@@ -30,7 +30,7 @@ function App() {
       breakSess > 1 && setBreakSess(breakSess - 1)
     }else{
       session > 1 && setSession(session - 1)
-      currentSession > 1 && setCurrentSession(session - 1) 
+      currentSession > 1*60 && setCurrentSession((session - 1)*60) 
     }  
   }
 
@@ -39,34 +39,56 @@ function App() {
       breakSess < 60 && setBreakSess(breakSess + 1)
     }else{
       session < 60 && setSession(session + 1)
-      currentSession < 60 && setCurrentSession(session + 1) 
+      currentSession < 60*60 && setCurrentSession((session + 1)*60) 
     } 
   }
 
   const handleReset = () => {
     setSession(sessionRef.current)
     setBreakSess(breakRef.current)
-    setCurrentSession(sessionRef.current)
+    setCurrentSession(sessionRef.current *60)
   }
 
+
+  const holarte = async () =>{
+    if(currentSession == 0){
+      setCurrentSession(breakSess*60)
+    }
+    setTimeout(()=>setCurrentSession(currentSession-1), 1000);
+    console.log("hola"+ currentSession)
+  }
   const handlePlay = (e) => {
-    setClockState("playing")
+    if(clockState ==="paused"){
+      setClockState("running")
+      holarte()
+    }else{
+      setClockState("paused")
+    }
   }
 
+  const formatTimes = (time)=>{
+    let minutes = Math.floor(time/60) + ""
+    let seconds = time%60 + ""
+    minutes.length === 1 ? minutes = "0" + minutes : minutes = minutes
+    seconds.length === 1 ? seconds = "0" + seconds : seconds = seconds
+    let timeConverted = minutes + ":" + seconds
+    return timeConverted
+  }
   
 
-  useEffect(() => {
+  useEffect( () => {
+    let hola;
     if(!mounted.current){
       mounted.current = true
-      console.log("hola")
-    }else{
-      setTimeout(()=>setCurrentSession(currentSession-1),1000)
+    }else if(clockState ==="running"){
+      
+      // holarte()
+      
     }
+    
     
   }, [currentSession])
   
-
-
 
   return (
     <ChakraProvider theme={theme}>
@@ -95,7 +117,7 @@ function App() {
 
           <VStack width="250px" border="4px solid" borderColor="blackAlpha.400" borderRadius={10} >
             <Text id="timer-label" fontSize="2xl">Session</Text>
-            <Text id="time-left" fontSize="6xl">{currentSession}:00</Text>
+            <Text id="time-left" fontSize="6xl">{formatTimes(currentSession)}</Text>
           </VStack>
 
 
