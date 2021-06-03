@@ -10,7 +10,7 @@ import {
   VStack,
 } from '@chakra-ui/react';
 // import { ColorModeSwitcher } from './ColorModeSwitcher';
-import {FaPlay, FaPause, FaRedo, FaArrowDown, FaArrowUp} from "react-icons/fa"
+import {FaPlay, FaRedo, FaArrowDown, FaArrowUp} from "react-icons/fa"
 
 
 
@@ -22,73 +22,90 @@ function App() {
   const [breakSess, setBreakSess] = useState(breakRef.current)
   const [clockState, setClockState] = useState("paused")
   const [currentSession, setCurrentSession] = useState(session*60)
+  const [nameCurrentSession, setNameCurrentSession] = useState("Session")
+
   
   const currentSessionRef = useRef(session)
 
+  const formatTimes = (time)=>{
+    let minutes = Math.floor(time/60) + ""
+    let seconds = time%60 + ""
+    minutes.length === 1 ? minutes = "0" + minutes : minutes += ""
+    seconds.length === 1 ? seconds = "0" + seconds : seconds += ""
+    let timeConverted = minutes + ":" + seconds
+    return timeConverted
+  }
+
   const handleDecrement = (e) => {
-    if(e.currentTarget.id.includes("break")){
-      breakSess > 1 && setBreakSess(breakSess - 1)
-    }else{
-      session > 1 && setSession(session - 1)
-      currentSession > 1*60 && setCurrentSession((session - 1)*60) 
-    }  
+    if(!(clockState === "running")) {
+      if(e.currentTarget.id.includes("break")){
+        breakSess > 1 && setBreakSess(breakSess - 1)
+      }else{
+        session > 1 && setSession(session - 1)
+        currentSession > 1*60 && setCurrentSession((session - 1)*60) 
+      } 
+    }
   }
 
   const handleIncrement = (e) => {
-    if(e.currentTarget.id.includes("break")){
-      breakSess < 60 && setBreakSess(breakSess + 1)
-    }else{
-      session < 60 && setSession(session + 1)
-      currentSession < 60*60 && setCurrentSession((session + 1)*60) 
-    } 
+    if(!(clockState === "running")) {
+      if(e.currentTarget.id.includes("break")){
+        breakSess < 60 && setBreakSess(breakSess + 1)
+      }else{
+        session < 60 && setSession(session + 1)
+        currentSession < 60*60 && setCurrentSession((session + 1)*60) 
+      } 
+    }  
   }
 
   const handleReset = () => {
     setSession(sessionRef.current)
     setBreakSess(breakRef.current)
     setCurrentSession(sessionRef.current *60)
+    setNameCurrentSession("Session")
+    setClockState("paused")
   }
 
 
-  const holarte = async () =>{
-    if(currentSession == 0){
-      setCurrentSession(breakSess*60)
-    }
-    setTimeout(()=>setCurrentSession(currentSession-1), 1000);
-    console.log("hola"+ currentSession)
-  }
+  
   const handlePlay = (e) => {
     if(clockState ==="paused"){
       setClockState("running")
-      holarte()
+      setCurrentSession(currentSession-1)
     }else{
       setClockState("paused")
     }
   }
 
-  const formatTimes = (time)=>{
-    let minutes = Math.floor(time/60) + ""
-    let seconds = time%60 + ""
-    minutes.length === 1 ? minutes = "0" + minutes : minutes = minutes
-    seconds.length === 1 ? seconds = "0" + seconds : seconds = seconds
-    let timeConverted = minutes + ":" + seconds
-    return timeConverted
-  }
-  
-
   useEffect( () => {
     let hola;
     if(!mounted.current){
       mounted.current = true
-    }else if(clockState ==="running"){
-      
-      // holarte()
-      
+    }else if(clockState ==="running"){    
+      const holarte = async () =>{
+    
+        if(currentSession === 0 && nameCurrentSession === "Session"){
+          let beep = document.getElementById("beep")
+          beep.play()
+          setCurrentSession(breakSess*60)
+          setNameCurrentSession("Break")
+        }else if (currentSession === 0 && nameCurrentSession === "Break"){
+          let beep = document.getElementById("beep")
+          beep.play()
+          setCurrentSession(session*60)
+          setNameCurrentSession("session")
+        }
+        hola = await setTimeout(()=>setCurrentSession(currentSession-1), 1000);
+
+      }
+      holarte()    
+    } 
+
+    return ()=>{
+      clearTimeout(hola)
     }
-    
-    
   }, [currentSession])
-  
+
 
   return (
     <ChakraProvider theme={theme}>
@@ -116,7 +133,7 @@ function App() {
 
 
           <VStack width="250px" border="4px solid" borderColor="blackAlpha.400" borderRadius={10} >
-            <Text id="timer-label" fontSize="2xl">Session</Text>
+            <Text id="timer-label" fontSize="2xl">{nameCurrentSession}</Text>
             <Text id="time-left" fontSize="6xl">{formatTimes(currentSession)}</Text>
           </VStack>
 
@@ -129,7 +146,7 @@ function App() {
             <Icon id="reset" cursor="pointer" onClick={handleReset} as={FaRedo} />
           </HStack>
         </VStack>
-        {/* <audio id="beep" src="https://raw.githubusercontent.com/freeCodeCamp/cdn/master/build/testable-projects-fcc/audio/BeepSound.wav" ></audio> */}
+        <audio id="beep" src="https://raw.githubusercontent.com/freeCodeCamp/cdn/master/build/testable-projects-fcc/audio/BeepSound.wav" ></audio>
       </Center>
     </ChakraProvider>
   );
